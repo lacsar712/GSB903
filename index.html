@@ -134,12 +134,35 @@
         </div>
     </div>
 
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="hidden fixed inset-0 z-[1001] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" onclick="closeFavoritesModal()"></div>
+        <div class="bg-white/95 backdrop-blur-xl w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden transform transition-all relative">
+            <div class="px-8 pt-8 pb-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-black text-gray-900 flex items-center gap-2">我的收藏 <i data-lucide="heart" class="w-6 h-6 text-red-500 fill-red-500"></i></h3>
+                    <p class="text-xs text-red-500 font-bold uppercase tracking-widest mt-1">My Loved Items</p>
+                </div>
+                <button onclick="closeFavoritesModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="favoritesList" class="p-8 max-h-[60vh] overflow-y-auto space-y-4">
+                <!-- Favorites injected here -->
+            </div>
+            <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                <p class="text-xs text-gray-400 font-medium italic">收藏心头好，下次下单更快捷</p>
+            </div>
+        </div>
+    </div>
+
     <script>
         lucide.createIcons();
 
         let allProducts = [];
         let currentFilter = 'all';
         let cart = [];
+        let favoriteIds = new Set();
 
         // Check Auth Status
         function checkAuth() {
@@ -150,16 +173,19 @@
 
             if (token && user) {
                 authSection.innerHTML = `
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
                         <div class="hidden md:flex flex-col items-end">
                             <span class="text-xs text-amber-600 font-bold uppercase tracking-wider">Happy Customer</span>
                             <span class="text-sm font-medium text-gray-900">${escapeHTML(user.username)}</span>
                         </div>
+                        <button onclick="viewFavorites()" class="text-gray-500 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors relative" title="我的收藏">
+                            <i data-lucide="heart" class="w-5 h-5"></i>
+                        </button>
                         <button onclick="openCartModal()" class="text-gray-500 hover:text-amber-700 hover:bg-amber-50 p-2 rounded-full transition-colors relative" title="购物车">
                             <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                             <span id="cartCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
                         </button>
-                        <button onclick="viewOrders()" class="text-amber-700 hover:bg-amber-50 p-2 rounded-full transition-colors relative" title="我的订单">
+                        <button onclick="viewOrders()" class="text-gray-500 hover:text-amber-700 hover:bg-amber-50 p-2 rounded-full transition-colors relative" title="我的订单">
                             <i data-lucide="shopping-bag" class="w-5 h-5"></i>
                         </button>
                         <button onclick="logout()" class="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-full transition-colors" title="注销退出">
@@ -384,10 +410,168 @@
             window.location.reload();
         }
 
+        async function fetchFavorites() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                favoriteIds.clear();
+                return;
+            }
+            try {
+                const res = await apiFetch('/api.php/api/favorites');
+                if (res.ok) {
+                    const favorites = await res.json();
+                    favoriteIds.clear();
+                    favorites.forEach(f => favoriteIds.add(f.product_id));
+                }
+            } catch(e) {
+                console.error('Failed to fetch favorites:', e);
+            }
+        }
+
+        async function toggleFavorite(productId, event) {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('请登录后收藏心仪商品', 'info');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+
+            const btn = event.currentTarget;
+            const icon = btn.querySelector('svg');
+            btn.style.pointerEvents = 'none';
+
+            try {
+                const res = await apiFetch('/api.php/api/favorites/toggle', {
+                    method: 'POST',
+                    body: JSON.stringify({ product_id: productId })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    if (data.is_favorited) {
+                        favoriteIds.add(productId);
+                        icon.classList.add('text-red-500', 'fill-red-500');
+                        icon.classList.remove('text-gray-400');
+                        showToast('已加入收藏 ❤️', 'success');
+                    } else {
+                        favoriteIds.delete(productId);
+                        icon.classList.remove('text-red-500', 'fill-red-500');
+                        icon.classList.add('text-gray-400');
+                        showToast('已取消收藏', 'info');
+                    }
+                } else {
+                    showToast(data.error || '操作失败', 'error');
+                }
+            } catch(e) {
+                showToast('网络错误，请稍后再试', 'error');
+            } finally {
+                btn.style.pointerEvents = 'auto';
+                lucide.createIcons();
+            }
+        }
+
+        function openFavoritesModal() {
+            viewFavorites();
+        }
+
+        function closeFavoritesModal() {
+            document.getElementById('favoritesModal').classList.add('hidden');
+        }
+
+        async function viewFavorites() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('请登录后查看收藏', 'info');
+                return;
+            }
+
+            const list = document.getElementById('favoritesList');
+            list.innerHTML = '<div class="flex flex-col items-center py-10 opacity-20"><i data-lucide="loader-2" class="w-10 h-10 animate-spin text-red-500 mb-2"></i><p>加载收藏中...</p></div>';
+            lucide.createIcons();
+            
+            document.getElementById('favoritesModal').classList.remove('hidden');
+
+            try {
+                const res = await apiFetch('/api.php/api/favorites');
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Fetch failed');
+                }
+                const favorites = await res.json();
+                
+                favoriteIds.clear();
+                favorites.forEach(f => favoriteIds.add(f.product_id));
+
+                if (favorites.length === 0) {
+                    list.innerHTML = `
+                        <div class="py-20 text-center flex flex-col items-center opacity-40">
+                            <i data-lucide="heart" class="w-16 h-16 mb-4 text-gray-300"></i>
+                            <p class="font-bold text-gray-500">还没有收藏任何商品哦</p>
+                            <p class="text-sm text-gray-400 mt-2">点击商品卡片上的爱心开始收藏吧！</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    renderProducts();
+                    return;
+                }
+
+                list.innerHTML = '';
+                favorites.forEach(fav => {
+                    const product = fav.product;
+                    if (!product) return;
+                    const name = escapeHTML(product.name);
+                    const date = new Date(fav.created_at).toLocaleDateString();
+                    
+                    list.innerHTML += `
+                        <div class="flex items-center gap-4 p-4 bg-gradient-to-r from-red-50/50 to-white rounded-2xl border border-red-100/50 shadow-sm group hover:shadow-md transition-all">
+                            <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                                <img src="${product.image_url}" alt="${name}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-gray-900 truncate">${name}</h4>
+                                <p class="text-amber-600 font-black text-sm mt-0.5">¥${parseFloat(product.price).toFixed(2)}</p>
+                                <p class="text-[10px] text-gray-400 font-medium mt-1">收藏于 ${date}</p>
+                            </div>
+                            <button onclick="removeFavorite(${fav.id}, ${product.id})" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100" title="移除收藏">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                renderProducts();
+            } catch(e) {
+                list.innerHTML = `<p class="text-center py-10 text-red-400 font-black tracking-widest uppercase">加载失败 (${e.message})</p>`;
+            }
+            lucide.createIcons();
+        }
+
+        async function removeFavorite(favId, productId) {
+            try {
+                const res = await apiFetch(`/api.php/api/favorites/${favId}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    favoriteIds.delete(productId);
+                    showToast('已从收藏中移除', 'info');
+                    viewFavorites();
+                } else {
+                    showToast(data.error || '移除失败', 'error');
+                }
+            } catch(e) {
+                showToast('网络错误', 'error');
+            }
+        }
+
         async function fetchProducts() {
             try {
                 const response = await apiFetch('/api.php/api/products');
                 allProducts = await response.json();
+                await fetchFavorites();
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('productGrid').classList.remove('hidden');
                 renderProducts();
@@ -430,11 +614,15 @@
                 const name = escapeHTML(product.name);
                 const desc = escapeHTML(product.description);
                 const encodedProduct = encodeURIComponent(JSON.stringify(product));
+                const isFav = favoriteIds.has(product.id);
                 grid.innerHTML += `
                     <div class="group bg-white rounded-3xl overflow-hidden card-hover transition-all duration-500 border border-gray-100/50">
                         <div class="aspect-[4/3] overflow-hidden bg-gray-100 relative">
                             <img src="${product.image_url}" alt="${name}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <button onclick="toggleFavorite(${product.id}, event)" class="absolute top-3 right-3 p-2.5 rounded-full bg-white/80 backdrop-blur-md shadow-sm hover:bg-white transition-all hover:scale-110 active:scale-95 z-10" title="${isFav ? '取消收藏' : '收藏此商品'}">
+                                <i data-lucide="heart" class="w-5 h-5 transition-colors ${isFav ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-500'}"></i>
+                            </button>
                             <div class="absolute bottom-3 left-3 flex gap-2">
                                 <span class="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-amber-800 uppercase tracking-tighter shadow-sm border border-amber-50">
                                     ${product.category === 'coffee' ? '咖啡' : '甜品'}
