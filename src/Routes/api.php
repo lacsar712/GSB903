@@ -18,3 +18,8 @@ $router->post('/api/messages', 'App\\Controllers\\MessageController@store'); // 
 // Orders
 $router->get('/api/orders', 'App\\Controllers\\OrderController@index'); // Auth required
 $router->post('/api/orders', 'App\\Controllers\\OrderController@store'); // Auth required
+
+// Favorites (All endpoints require JWT auth)
+$router->get('/api/favorites', 'App\\Controllers\\FavoriteController@index');
+$router->post('/api/favorites', 'App\\Controllers\\FavoriteController@store');
+$router->delete('/api/favorites/(\\d+)', 'App\\Controllers\\FavoriteController@destroy');

@@ -87,6 +87,24 @@ CREATE TABLE `order_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
+-- Table structure for favorites
+-- ----------------------------
+DROP TABLE IF EXISTS `favorites`;
+CREATE TABLE `favorites` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `product_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_user_product` (`user_id`, `product_id`),
+  KEY `user_id` (`user_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `favorites_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `favorites_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------
 -- Records
 -- ----------------------------
 
@@ -105,5 +123,13 @@ INSERT INTO products (name, description, price, category, image_url) VALUES
 ('美式咖啡', '纯粹的黑咖啡，唤醒活力的一天', 22.00, 'coffee', 'https://images.unsplash.com/photo-1559825481-12a05cc00344?q=80&w=600&auto=format&fit=crop'),
 ('提拉米苏', '意大利经典甜点，口感丰富', 35.00, 'dessert', 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?q=80&w=600&auto=format&fit=crop'),
 ('草莓蛋糕', '新鲜草莓搭配松软海绵蛋糕', 32.00, 'dessert', 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=600&auto=format&fit=crop');
+
+-- 预置收藏示例数据：testuser 收藏 4 款，admin 收藏 1 款，覆盖完整商品列表
+INSERT INTO favorites (user_id, product_id) VALUES
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 4),
+(1, 1);
 
 SET FOREIGN_KEY_CHECKS = 1;
