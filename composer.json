@@ -1,0 +1,25 @@
+{
+  "name": "vibe/sunny-coffee-backend",
+  "description": "Backend for Sunny Coffee Shop",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "bramus/router": "^1.6",
+    "illuminate/database": "^10.0",
+    "vlucas/phpdotenv": "^5.5",
+    "firebase/php-jwt": "^6.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
+  }
+}

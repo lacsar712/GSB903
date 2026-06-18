@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>留言板 - 晴天咖啡馆</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+    <style> body { font-family: 'Inter', system-ui, sans-serif; background-color: #FDFBF7; } </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center h-16">
+                <a href="index.html" class="flex items-center text-amber-600 font-bold hover:text-amber-700">
+                    <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> 返回主页
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto py-10 px-4">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center text-amber-900">咖啡馆留言板</h1>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-8 border border-gray-100">
+            <h2 class="text-lg font-bold mb-4 text-gray-700">给店长留言...</h2>
+            <textarea id="content" rows="4" class="w-full border border-gray-300 rounded-md p-3 focus:ring-amber-500 focus:border-amber-500 outline-none" placeholder="写下你的感受... (需登录)"></textarea>
+            <div class="mt-4 flex justify-end">
+                <button onclick="postMessage()" class="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium transition-colors">发布留言</button>
+            </div>
+        </div>
+
+        <div id="messages" class="space-y-4">
+            <!-- Messages here -->
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        async function fetchMessages() {
+            const res = await apiFetch('/api.php/api/messages');
+            const data = await res.json();
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            
+            data.forEach(msg => {
+                const username = escapeHTML(msg.user?.username || '用户');
+                const content = escapeHTML(msg.content);
+                const firstLetter = username[0].toUpperCase();
+                
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-orange-100/50 flex gap-5 hover:shadow-md transition-shadow duration-300">
+                        <div class="flex-shrink-0">
+                            <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/20 flex items-center justify-center text-white font-bold text-2xl">
+                                ${firstLetter}
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-bold text-amber-900 text-lg">${username}</h4>
+                                <span class="text-xs text-amber-700/40 font-medium">${new Date(msg.created_at).toLocaleString()}</span>
+                            </div>
+                            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${content}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function postMessage() {
+            const token = localStorage.getItem('token');
+            if(!token) {
+                showToast('请先登录后留言', 'info');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+
+            const content = document.getElementById('content').value;
+            if(!content.trim()) return;
+
+            const res = await apiFetch('/api.php/api/messages', {
+                method: 'POST',
+                body: JSON.stringify({ content })
+            });
+            
+            if(res.ok) {
+                document.getElementById('content').value = '';
+                showToast('留言发布成功');
+                fetchMessages();
+            } else {
+                showToast('留言发布失败', 'error');
+            }
+        }
+
+        fetchMessages();
+    </script>
+</body>
+</html>

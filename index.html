@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>晴天咖啡馆 - Sunny Day Coffee Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #FDFBF7; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-50/50 via-white to-white">
+    <!-- Navbar -->
+    <nav class="bg-white/70 backdrop-blur-xl border-b border-amber-100/50 sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center group cursor-pointer">
+                    <div class="bg-amber-600 p-2 rounded-xl text-white shadow-lg shadow-amber-600/30 group-hover:rotate-12 transition-transform">
+                        <i data-lucide="coffee" class="h-6 w-6"></i>
+                    </div>
+                    <a href="index.html" class="ml-3 text-2xl font-black text-gray-900 tracking-tight">Sunny <span class="text-amber-600">Coffee</span></a>
+                </div>
+                <div class="flex items-center space-x-2 lg:space-x-8">
+                    <div class="hidden md:flex items-center space-x-1 border-r border-gray-100 pr-4">
+                        <a href="index.html" class="text-amber-700 font-bold px-4 py-2 rounded-xl bg-amber-50">甄选菜单</a>
+                        <a href="guestbook.html" class="text-gray-500 hover:text-amber-600 font-bold px-4 py-2 rounded-xl hover:bg-amber-50 transition-all">醇香留言</a>
+                        <a id="adminLink" href="admin.html" class="hidden text-gray-500 hover:text-amber-600 font-bold px-4 py-2 rounded-xl hover:bg-amber-50 transition-all">后台运营</a>
+                    </div>
+                    <div id="authSection">
+                        <!-- Dynamic Auth Section -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden py-20 lg:py-32">
+        <div class="max-w-7xl mx-auto px-4 relative z-10">
+            <div class="text-center max-w-3xl mx-auto">
+                <span class="inline-block px-4 py-1.5 mb-6 text-xs font-black tracking-widest text-amber-700 uppercase bg-amber-100/50 rounded-full border border-amber-200/50">Crafted with Passion Since 2026</span>
+                <h1 class="text-5xl lg:text-7xl font-black text-gray-900 mb-8 leading-[1.1]">
+                    在每一个晴天，<br/>
+                    <span class="bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">遇见最纯粹的香醇</span>
+                </h1>
+                <p class="text-lg text-gray-500 font-medium mb-10 leading-relaxed">
+                    从埃塞俄比亚的高地到您的杯中，每一颗咖啡豆都承载着清晨的阳光渲染。
+                </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                   <a href="#menu" class="px-8 py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-2xl shadow-gray-900/20 hover:bg-stone-800 transition-all active:scale-95">探索今日风味</a>
+                   <a href="guestbook.html" class="px-8 py-4 bg-white text-gray-700 border border-gray-200 font-bold rounded-2xl hover:bg-gray-50 transition-all">查看食客留言</a>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative Orbs -->
+        <div class="absolute top-0 left-0 w-96 h-96 bg-amber-200/20 rounded-full mix-blend-multiply filter blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+    </section>
+
+    <!-- Main Content -->
+    <main id="menu" class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <div>
+                <h2 class="text-3xl font-black text-gray-900 mb-2">甄选系列</h2>
+                <p class="text-gray-400 font-medium">Seasonal Specialties & Classics</p>
+            </div>
+            <div class="inline-flex bg-gray-100/50 backdrop-blur p-1.5 rounded-2xl border border-gray-100 shadow-inner">
+                <button onclick="filterItems('all')" id="btn-all" class="px-6 py-2.5 rounded-xl text-sm font-black transition-all bg-white shadow-lg shadow-gray-200 text-gray-900 ring-1 ring-gray-100">全部甄选</button>
+                <button onclick="filterItems('coffee')" id="btn-coffee" class="px-6 py-2.5 rounded-xl text-sm font-black transition-all text-gray-500 hover:text-amber-600">意式咖啡</button>
+                <button onclick="filterItems('dessert')" id="btn-dessert" class="px-6 py-2.5 rounded-xl text-sm font-black transition-all text-gray-500 hover:text-amber-600">手作甜品</button>
+            </div>
+        </div>
+
+        <div id="loading" class="flex flex-col items-center justify-center py-20 grayscale opacity-20 transition-opacity duration-1000">
+            <i data-lucide="coffee" class="h-10 w-10 animate-bounce text-amber-600 mb-4"></i>
+            <p class="text-xs font-black tracking-widest uppercase">研磨中...</p>
+        </div>
+
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12 hidden">
+            <!-- Products injected here -->
+        </div>
+    </main>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="hidden fixed inset-0 z-[1002] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" onclick="closeCartModal()"></div>
+        <div class="bg-white/95 backdrop-blur-xl w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden transform transition-all relative">
+            <div class="px-8 pt-8 pb-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-black text-gray-900">购物车</h3>
+                    <p class="text-xs text-amber-600 font-bold uppercase tracking-widest mt-1">Ready to checkout?</p>
+                </div>
+                <button onclick="closeCartModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="cartList" class="p-6 max-h-[50vh] overflow-y-auto space-y-4">
+                <!-- Cart items inject here -->
+            </div>
+            <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-100">
+                <input type="text" id="cartRemark" placeholder="订单备注 (可选)..." class="w-full p-3 mb-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="font-bold text-gray-500">总计金额</span>
+                    <span class="text-2xl font-black text-amber-600">¥<span id="cartTotal">0.00</span></span>
+                </div>
+                <button id="checkoutBtn" onclick="checkout()" class="w-full py-4 rounded-[1.5rem] text-white font-black uppercase tracking-widest bg-amber-600 hover:bg-amber-700 transition-colors shadow-lg shadow-amber-600/30 flex justify-center items-center">
+                    结算买单 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="hidden fixed inset-0 z-[1001] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity" onclick="closeOrderModal()"></div>
+        <div class="bg-white/95 backdrop-blur-xl w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden transform transition-all relative">
+            <div class="px-8 pt-8 pb-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h3 class="text-2xl font-black text-gray-900">我的点单历史</h3>
+                    <p class="text-xs text-amber-600 font-bold uppercase tracking-widest mt-1">My Delicious Journey</p>
+                </div>
+                <button onclick="closeOrderModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="orderList" class="p-8 max-h-[60vh] overflow-y-auto space-y-4">
+                <!-- Orders injected here -->
+            </div>
+            <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                <p class="text-xs text-gray-400 font-medium italic">所有的美味都值得等待...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let allProducts = [];
+        let currentFilter = 'all';
+        let cart = [];
+
+        // Check Auth Status
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            const authSection = document.getElementById('authSection');
+            const adminLink = document.getElementById('adminLink');
+
+            if (token && user) {
+                authSection.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="hidden md:flex flex-col items-end">
+                            <span class="text-xs text-amber-600 font-bold uppercase tracking-wider">Happy Customer</span>
+                            <span class="text-sm font-medium text-gray-900">${escapeHTML(user.username)}</span>
+                        </div>
+                        <button onclick="openCartModal()" class="text-gray-500 hover:text-amber-700 hover:bg-amber-50 p-2 rounded-full transition-colors relative" title="购物车">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                            <span id="cartCountBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+                        </button>
+                        <button onclick="viewOrders()" class="text-amber-700 hover:bg-amber-50 p-2 rounded-full transition-colors relative" title="我的订单">
+                            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="logout()" class="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-full transition-colors" title="注销退出">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                `;
+                if (user.role === 'admin') {
+                    adminLink.classList.remove('hidden');
+                }
+            } else {
+                authSection.innerHTML = `
+                    <a href="login.html" class="inline-flex items-center justify-center px-6 py-2 border border-transparent text-sm font-bold rounded-xl text-white bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-600/20 transition-all active:scale-95">
+                        登录开启香醇之旅
+                    </a>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function updateCartBadge() {
+            const token = localStorage.getItem('token');
+            if(!token) return;
+            const badge = document.getElementById('cartCountBadge');
+            if(!badge) return;
+            const totalStr = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (totalStr > 0) {
+                badge.innerText = totalStr > 99 ? '99+' : totalStr;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function addToCart(encodedProduct) {
+            const token = localStorage.getItem('token');
+            if(!token) {
+                showToast('请登录后再体验点单功能', 'info');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+            
+            const product = JSON.parse(decodeURIComponent(encodedProduct));
+            const existing = cart.find(i => i.product.id === product.id);
+            if(existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ product, quantity: 1 });
+            }
+            showToast(`已将 ${escapeHTML(product.name)} 加入购物车`, 'success');
+            updateCartBadge();
+        }
+
+        function openCartModal() {
+            renderCart();
+            document.getElementById('cartModal').classList.remove('hidden');
+        }
+
+        function closeCartModal() {
+            document.getElementById('cartModal').classList.add('hidden');
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const totalSpan = document.getElementById('cartTotal');
+            
+            if (cart.length === 0) {
+                list.innerHTML = `
+                    <div class="py-10 text-center flex flex-col items-center opacity-40">
+                        <i data-lucide="shopping-cart" class="w-12 h-12 mb-4"></i>
+                        <p class="font-bold text-gray-500">购物车空空如也</p>
+                    </div>
+                `;
+                totalSpan.innerText = '0.00';
+                lucide.createIcons();
+                return;
+            }
+
+            let total = 0;
+            list.innerHTML = '';
+            cart.forEach((item, index) => {
+                total += item.product.price * item.quantity;
+                list.innerHTML += `
+                    <div class="flex justify-between items-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm relative">
+                        <div class="flex-1 pr-4">
+                            <h4 class="font-bold text-sm text-gray-900">${escapeHTML(item.product.name)}</h4>
+                            <p class="text-amber-600 font-black text-sm mt-1">¥${parseFloat(item.product.price).toFixed(2)}</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-gray-50 p-1.5 rounded-full border border-gray-200/60">
+                            <button onclick="updateCartQty(${index}, -1)" class="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-amber-600"><i data-lucide="minus" class="w-3 h-3"></i></button>
+                            <span class="font-black w-4 text-center text-sm">${item.quantity}</span>
+                            <button onclick="updateCartQty(${index}, 1)" class="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-amber-600"><i data-lucide="plus" class="w-3 h-3"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            totalSpan.innerText = total.toFixed(2);
+            lucide.createIcons();
+        }
+
+        function updateCartQty(index, delta) {
+            cart[index].quantity += delta;
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartBadge();
+            renderCart();
+        }
+
+        async function checkout() {
+            if (cart.length === 0) {
+                showToast('购物车为空，请先添加商品', 'error');
+                return;
+            }
+            
+            const remark = document.getElementById('cartRemark').value;
+            const items = cart.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
+            
+            const btn = document.getElementById('checkoutBtn');
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>';
+            btn.disabled = true;
+            lucide.createIcons();
+
+            try {
+                const res = await apiFetch('/api.php/api/orders', {
+                    method: 'POST',
+                    body: JSON.stringify({ items, remark })
+                });
+                
+                if (res.ok) {
+                    showToast('点单成功！店长正在光速为您准备 ☕️', 'success');
+                    cart = [];
+                    updateCartBadge();
+                    closeCartModal();
+                    document.getElementById('cartRemark').value = '';
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || '结算失败', 'error');
+                }
+            } catch(e) {
+                showToast('服务器开小差了，请稍后再试', 'error');
+            } finally {
+                btn.innerHTML = '结算买单 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>';
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        async function viewOrders() {
+            const token = localStorage.getItem('token');
+            if(!token) {
+                showToast('请登录后再查看订单', 'info');
+                return;
+            }
+
+            const list = document.getElementById('orderList');
+            list.innerHTML = '<div class="flex flex-col items-center py-10 opacity-20"><i data-lucide="loader-2" class="w-10 h-10 animate-spin text-amber-600 mb-2"></i><p>加载订单中...</p></div>';
+            lucide.createIcons();
+            
+            document.getElementById('orderModal').classList.remove('hidden');
+
+            try {
+                const res = await apiFetch('/api.php/api/orders');
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Fetch failed');
+                }
+                const orders = await res.json();
+                
+                if (orders.length === 0) {
+                    list.innerHTML = `
+                        <div class="py-20 text-center flex flex-col items-center opacity-40">
+                            <i data-lucide="coffee" class="w-16 h-16 mb-4"></i>
+                            <p class="font-bold text-gray-500">暂时还没有点单哦，快去挑选吧！</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                list.innerHTML = '';
+                orders.forEach(order => {
+                    const date = new Date(order.created_at).toLocaleString();
+                    const itemNames = order.items && order.items.length > 0 
+                        ? order.items.map(i => `${escapeHTML(i.product_name_snapshot)} <span class="text-gray-400">x${i.quantity}</span>`).join('，') 
+                        : '未知商品';
+                        
+                    const remarkHtml = order.remark && order.remark.trim() !== '' 
+                        ? `<p class="text-[11px] text-gray-500 mt-2 bg-gray-50 p-2 rounded-lg">备注: ${escapeHTML(order.remark)}</p>` 
+                        : '';
+
+                    list.innerHTML += `
+                        <div class="flex justify-between items-center p-5 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100/50 shadow-sm relative overflow-hidden group">
+                           <div class="absolute left-0 top-0 w-1 h-full bg-amber-500 transition-all group-hover:w-2"></div>
+                           <div class="flex-1 pr-4">
+                               <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">${date}</p>
+                               <h4 class="font-bold text-sm text-gray-900 group-hover:text-amber-800 transition-colors leading-relaxed">${itemNames}</h4>
+                               ${remarkHtml}
+                           </div>
+                           <div class="flex flex-col items-end gap-2">
+                               <span class="text-amber-600 font-black text-lg">¥${parseFloat(order.total_price).toFixed(2)}</span>
+                               <span class="px-3 py-1 rounded-full text-[10px] font-black tracking-tighter uppercase border ${order.status === 'pending' ? 'bg-amber-100/50 text-amber-600 border-amber-200' : 'bg-green-100/50 text-green-600 border-green-200'}">
+                                   ${order.status === 'pending' ? '准备中' : '已送达'}
+                               </span>
+                           </div>
+                        </div>
+                    `;
+                });
+            } catch(e) {
+                list.innerHTML = `<p class="text-center py-10 text-red-400 font-black tracking-widest uppercase">Oops! 订单加载失败 (${e.message})</p>`;
+            }
+            lucide.createIcons();
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.add('hidden');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.reload();
+        }
+
+        async function fetchProducts() {
+            try {
+                const response = await apiFetch('/api.php/api/products');
+                allProducts = await response.json();
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('productGrid').classList.remove('hidden');
+                renderProducts();
+            } catch (error) {
+                console.error("Failed to fetch products:", error);
+                showToast('无法加载菜单，请刷新页面', 'error');
+            }
+        }
+
+        function filterItems(category) {
+            currentFilter = category;
+            
+            // Update buttons
+            ['all', 'coffee', 'dessert'].forEach(cat => {
+                const btn = document.getElementById('btn-' + cat);
+                if (cat === category) {
+                    btn.classList.add('bg-white', 'shadow-md', 'text-amber-900', 'ring-1', 'ring-amber-200');
+                    btn.classList.remove('text-gray-600', 'hover:text-gray-900');
+                } else {
+                    btn.classList.remove('bg-white', 'shadow-md', 'text-amber-900', 'ring-1', 'ring-amber-200');
+                    btn.classList.add('text-gray-600', 'hover:text-gray-900');
+                }
+            });
+
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            
+            const filtered = currentFilter === 'all' ? allProducts : allProducts.filter(p => p.category === currentFilter);
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-12 text-center text-gray-400">暂无此类目商品</div>';
+                return;
+            }
+
+            filtered.forEach(product => {
+                const name = escapeHTML(product.name);
+                const desc = escapeHTML(product.description);
+                const encodedProduct = encodeURIComponent(JSON.stringify(product));
+                grid.innerHTML += `
+                    <div class="group bg-white rounded-3xl overflow-hidden card-hover transition-all duration-500 border border-gray-100/50">
+                        <div class="aspect-[4/3] overflow-hidden bg-gray-100 relative">
+                            <img src="${product.image_url}" alt="${name}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div class="absolute bottom-3 left-3 flex gap-2">
+                                <span class="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-amber-800 uppercase tracking-tighter shadow-sm border border-amber-50">
+                                    ${product.category === 'coffee' ? '咖啡' : '甜品'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2 gap-4">
+                                <h3 class="text-xl font-black text-gray-900 leading-none line-clamp-1 flex-1">${name}</h3>
+                                <div class="text-xl font-black text-amber-600 whitespace-nowrap">
+                                    <span class="text-sm">¥</span>${parseFloat(product.price).toFixed(0)}
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400 font-medium line-clamp-2 h-10 mb-6">${desc || '店长亲自挑选，口感极佳'}</p>
+                            <button onclick="addToCart('${encodedProduct}')" class="w-full bg-stone-900 hover:bg-amber-600 text-white font-bold py-4 px-4 rounded-2xl flex justify-center items-center transition-all shadow-xl shadow-stone-900/10 active:scale-[0.98] group/btn">
+                                <i data-lucide="shopping-cart" class="w-5 h-5 mr-2 transition-transform group-hover/btn:scale-110"></i> 加入购物车
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            fetchProducts();
+        });
+    </script>
+</body>
+</html>

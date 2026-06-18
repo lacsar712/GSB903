@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 晴天咖啡馆</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="flex items-center text-amber-600 font-bold text-lg"><i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> 回到主页</a>
+                </div>
+                <div class="flex items-center text-gray-800 font-medium">后台商品管理</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">产品列表</h2>
+                <button onclick="openModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium">
+                    新增产品
+                </button>
+            </div>
+            
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">产品图片</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">名称</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">分类</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">价格</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Data here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="productModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div class="p-8 border w-96 shadow-lg rounded-md bg-white">
+            <h3 id="modalTitle" class="text-lg font-bold mb-4">新增产品</h3>
+            <div class="space-y-4">
+                <input type="hidden" id="pid">
+                <div><label class="block text-sm font-black text-amber-800 uppercase tracking-tighter mb-1">名称 (限50字)</label><input type="text" id="pname" maxlength="50" placeholder="例如：拿铁咖啡" class="border border-gray-100 bg-gray-50 p-3 w-full rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20"></div>
+                <div><label class="block text-sm">分类</label>
+                    <select id="pcat" class="border w-full p-2 rounded">
+                        <option value="coffee">咖啡</option>
+                        <option value="dessert">甜品</option>
+                    </select>
+                </div>
+                <div><label class="block text-sm">价格</label><input type="number" id="pprice" class="border w-full p-2 rounded"></div>
+                <div><label class="block text-sm">描述</label><textarea id="pdesc" class="border w-full p-2 rounded"></textarea></div>
+                <div><label class="block text-sm">图片网址</label><input type="text" id="pimg" class="border w-full p-2 rounded"></div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded">取消</button>
+                    <button onclick="saveProduct()" class="px-4 py-2 bg-amber-600 text-white rounded">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-[100]">
+        <div class="p-6 border w-80 shadow-lg rounded-xl bg-white text-center">
+            <h3 class="text-lg font-bold mb-2 text-gray-900">确认删除？</h3>
+            <p class="text-sm text-gray-500 mb-6">操作不可逆转，确定要继续吗？</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeConfirmModal()" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">取消</button>
+                <button id="confirmActionBtn" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        
+        if (!token || user?.role !== 'admin') {
+            showToast('无权限访问', 'error');
+            setTimeout(() => window.location.href = 'index.html', 1500);
+        }
+
+        async function fetchProducts() {
+            const res = await apiFetch('/api.php/api/products');
+            const data = await res.json();
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(p => {
+                const name = escapeHTML(p.name);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-6 py-4"><img src="${p.image_url}" class="w-14 h-14 object-cover rounded-xl shadow-sm border border-gray-100"></td>
+                        <td class="px-6 py-4 font-bold text-gray-900 max-w-[200px] truncate" title="${name}">${name}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-100 uppercase tracking-tighter">
+                                ${p.category === 'coffee' ? '咖啡' : '甜品'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-black text-amber-600 italic text-lg">¥${p.price}</td>
+                        <td class="px-6 py-4 text-right flex justify-end gap-3 mt-3">
+                            <button onclick='editProduct(${JSON.stringify(p)})' class="flex items-center text-stone-600 hover:text-amber-600 font-bold transition-colors">
+                                <i data-lucide="edit-3" class="w-4 h-4 mr-1"></i> 编辑
+                            </button>
+                            <button onclick="deleteProduct(${p.id})" class="flex items-center text-red-400 hover:text-red-600 font-bold transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function editProduct(p) {
+            document.getElementById('pid').value = p.id;
+            document.getElementById('pname').value = p.name;
+            document.getElementById('pcat').value = p.category;
+            document.getElementById('pprice').value = p.price;
+            document.getElementById('pdesc').value = p.description;
+            document.getElementById('pimg').value = p.image_url;
+            document.getElementById('modalTitle').innerText = '编辑产品';
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function openModal() {
+            document.getElementById('pid').value = '';
+            document.getElementById('pname').value = '';
+            document.getElementById('pprice').value = '';
+            document.getElementById('pdesc').value = '';
+            document.getElementById('pimg').value = '';
+            document.getElementById('modalTitle').innerText = '新增产品';
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        async function saveProduct() {
+            const id = document.getElementById('pid').value;
+            const data = {
+                name: document.getElementById('pname').value.trim(),
+                category: document.getElementById('pcat').value,
+                price: document.getElementById('pprice').value.trim(),
+                description: document.getElementById('pdesc').value.trim(),
+                image_url: document.getElementById('pimg').value.trim()
+            };
+            
+            if (!data.name || !data.price) {
+                showToast('商品名称和价格不能为空', 'error');
+                return;
+            }
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? '/api.php/api/products/' + id : '/api.php/api/products';
+
+            const res = await apiFetch(url, {
+                method: method,
+                body: JSON.stringify(data)
+            });
+            
+            if(res.ok) {
+                showToast(id ? '修改成功' : '新增成功', 'success');
+                closeModal();
+                fetchProducts();
+            } else {
+                try {
+                    const err = await res.json();
+                    showToast(err.error || '保存失败，请重试', 'error');
+                } catch(e) {
+                    showToast('保存失败，请检查服务器请求', 'error');
+                }
+            }
+        }
+
+        let pendingDeleteId = null;
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            pendingDeleteId = null;
+        }
+
+        function deleteProduct(id) {
+            pendingDeleteId = id;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        document.getElementById('confirmActionBtn').addEventListener('click', async () => {
+            if (!pendingDeleteId) return;
+            
+            const res = await apiFetch('/api.php/api/products/' + pendingDeleteId, {
+                method: 'DELETE'
+            });
+            if(res.ok) {
+                showToast('删除成功', 'success');
+                fetchProducts();
+            } else {
+                try {
+                    const err = await res.json();
+                    showToast(err.error || '删除失败，请重试', 'error');
+                } catch(e) {
+                    showToast('删除失败，请检查请求', 'error');
+                }
+            }
+            closeConfirmModal();
+        });
+
+        fetchProducts();
+    </script>
+</body>
+</html>

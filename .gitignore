@@ -1,0 +1,33 @@
+# 依赖目录
+node_modules/
+vendor/
+
+# 构建产物
+dist/
+build/
+
+# 环境变量
+.env
+.env.local
+.env.production
+
+# 日志
+*.log
+npm-debug.log*
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.dockerignore
+
+# 临时文件
+*.tmp
+*.temp
