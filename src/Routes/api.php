@@ -18,3 +18,9 @@ $router->post('/api/messages', 'App\\Controllers\\MessageController@store'); // 
 // Orders
 $router->get('/api/orders', 'App\\Controllers\\OrderController@index'); // Auth required
 $router->post('/api/orders', 'App\\Controllers\\OrderController@store'); // Auth required
+
+// Favorites
+$router->get('/api/favorites', 'App\\Controllers\\FavoriteController@index'); // Auth required
+$router->post('/api/favorites', 'App\\Controllers\\FavoriteController@store'); // Auth required
+$router->get('/api/favorites/check/(\\d+)', 'App\\Controllers\\FavoriteController@check'); // Auth required
+$router->delete('/api/favorites/(\\d+)', 'App\\Controllers\\FavoriteController@destroy'); // Auth required
