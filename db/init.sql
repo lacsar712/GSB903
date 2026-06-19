@@ -87,6 +87,24 @@ CREATE TABLE `order_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
+-- Table structure for favorites
+-- ----------------------------
+DROP TABLE IF EXISTS `favorites`;
+CREATE TABLE `favorites` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `product_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_product_unique` (`user_id`, `product_id`),
+  KEY `user_id` (`user_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `favorites_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `favorites_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------
 -- Records
 -- ----------------------------
 
@@ -103,7 +121,18 @@ INSERT INTO users (username, email, password_hash, role, is_active) VALUES
 INSERT INTO products (name, description, price, category, image_url) VALUES 
 ('拿铁咖啡', '经典意式浓缩与香浓牛奶的完美融合', 28.00, 'coffee', 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=600&auto=format&fit=crop'),
 ('美式咖啡', '纯粹的黑咖啡，唤醒活力的一天', 22.00, 'coffee', 'https://images.unsplash.com/photo-1559825481-12a05cc00344?q=80&w=600&auto=format&fit=crop'),
+('卡布奇诺', '绵密奶泡与浓郁咖啡的经典组合', 30.00, 'coffee', 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?q=80&w=600&auto=format&fit=crop'),
+('抹茶拿铁', '日式抹茶与香浓牛奶的清新碰撞', 32.00, 'coffee', 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?q=80&w=600&auto=format&fit=crop'),
 ('提拉米苏', '意大利经典甜点，口感丰富', 35.00, 'dessert', 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?q=80&w=600&auto=format&fit=crop'),
-('草莓蛋糕', '新鲜草莓搭配松软海绵蛋糕', 32.00, 'dessert', 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=600&auto=format&fit=crop');
+('草莓蛋糕', '新鲜草莓搭配松软海绵蛋糕', 32.00, 'dessert', 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=600&auto=format&fit=crop'),
+('巧克力布朗尼', '浓郁巧克力与坚果的完美邂逅', 28.00, 'dessert', 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?q=80&w=600&auto=format&fit=crop');
+
+-- 插入示例收藏记录 (testuser 用户 ID = 2, 收藏了 5 个商品)
+INSERT INTO favorites (user_id, product_id) VALUES 
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 5),
+(2, 6);
 
 SET FOREIGN_KEY_CHECKS = 1;
